@@ -13,7 +13,7 @@
 
 ## python依存関係の解決
 ```
-pip install -r requriements.txt
+pip install -r requirements.txt
 ```
 
 # 姿勢推定情報の抽出
