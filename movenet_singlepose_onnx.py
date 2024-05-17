@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os.path
 
-# original source: https://github.com/Kazuhito00/MoveNet-Python-Example
+# original code: https://github.com/Kazuhito00/MoveNet-Python-Example
 # original author: 高橋かずひと(https://twitter.com/KzhtTkhs)
 # modify : Toshihiko Aoki
 
@@ -29,7 +30,7 @@ def get_args():
     parser.add_argument("--keypoint_score", type=float, default=0.4)
 
     # add
-    parser.add_argument('--debug_output', action='store_true')
+    parser.add_argument("--debug_output",  action='store_true')
     parser.add_argument('--csv', action='store_true')
 
     args = parser.parse_args()
@@ -75,8 +76,20 @@ def main():
     cap_width = args.width
     cap_height = args.height
 
+    is_debug_output = False
+    is_csv = False
+
     if args.file is not None:
+        if not os.path.exists(args.file):
+            raise ValueError("file not found")
         cap_device = args.file
+        basename = os.path.splitext(os.path.basename(args.file))[0]
+        if args.debug_output:
+            os.makedirs('debugs', exist_ok=True)
+            is_debug_output = True
+        if args.csv:
+            os.makedirs('csv', exist_ok=True)
+            is_csv = True
 
     mirror = args.mirror
     model_select = args.model_select
@@ -86,6 +99,18 @@ def main():
     cap = cv.VideoCapture(cap_device)
     cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
     cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+
+    if is_debug_output:
+        debug_file_path = 'debugs/' + basename + '_debug.mp4'
+        fps = cap.get(cv.CAP_PROP_FPS)
+        frame_width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+        debug_writer = cv.VideoWriter(debug_file_path,
+                                      cv.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+
+    if is_csv:
+        csv_file_path = 'csv/' + basename + '.csv'
+        csv_writer = open(csv_file_path, 'w', newline='\n', encoding='utf-8')
 
     # モデルロード #############################################################
     if model_select == 0:
@@ -107,45 +132,63 @@ def main():
         ],
     )
 
-    while True:
-        start_time = time.time()
+    try:
+        frame_number = 0
+        while True:
+            start_time = time.time()
 
-        # カメラキャプチャ #####################################################
-        ret, frame = cap.read()
-        if not ret:
-            break
-        if mirror:
-            frame = cv.flip(frame, 1)  # ミラー表示
-        debug_image = copy.deepcopy(frame)
+            # カメラキャプチャ #####################################################
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if mirror:
+                frame = cv.flip(frame, 1)  # ミラー表示
+            debug_image = copy.deepcopy(frame)
 
-        # 検出実施 ##############################################################
-        keypoints, scores = run_inference(
-            onnx_session,
-            input_size,
-            frame,
-        )
+            # 検出実施 ##############################################################
+            keypoints, scores = run_inference(
+                onnx_session,
+                input_size,
+                frame,
+            )
 
-        elapsed_time = time.time() - start_time
+            elapsed_time = time.time() - start_time
 
-        # デバッグ描画
-        debug_image = draw_debug(
-            debug_image,
-            elapsed_time,
-            keypoint_score_th,
-            keypoints,
-            scores,
-        )
+            # デバッグ描画
+            debug_image = draw_debug(
+                debug_image,
+                elapsed_time,
+                keypoint_score_th,
+                keypoints,
+                scores,
+            )
+            if is_debug_output:
+                debug_writer.write(debug_image)
+            if is_csv:
+                output_csv(csv_writer, keypoints, scores, frame_number=frame_number)
 
-        # キー処理(ESC：終了) ##################################################
-        key = cv.waitKey(1)
-        if key == 27:  # ESC
-            break
+            frame_number += 1
 
-        # 画面反映 #############################################################
-        cv.imshow('MoveNet(singlepose) Demo', debug_image)
+            # キー処理(ESC：終了) ##################################################
+            key = cv.waitKey(1)
+            if key == 27:  # ESC
+                break
 
-    cap.release()
-    cv.destroyAllWindows()
+            # 画面反映 #############################################################
+            if not is_debug_output:
+                cv.imshow('MoveNet(singlepose) Demo', debug_image)
+
+
+    except Exception:
+        print()
+
+    finally:
+        if is_debug_output:
+            debug_writer.release()
+        if is_csv:
+            csv_writer.close()
+        cap.release()
+        cv.destroyAllWindows()
 
 
 # デバッグ動画色
@@ -207,6 +250,31 @@ def draw_debug(
                cv.LINE_AA)
 
     return debug_image
+
+
+KEYPOINTS_LABELS = [
+    "frame_number",
+    "nose_x", "nose_y", "nose_conf", "left_eye_x", "left_eye_y", "left_eye_conf", "right_eye_x", "right_eye_y",
+    "right_eye_conf", "left_ear_x", "left_ear_y", "left_ear_conf", "right_ear_x", "right_ear_y", "right_ear_conf",
+    "left_shoulder_x", "left_shoulder_y", "left_shoulder_conf", "right_shoulder_x", "right_shoulder_y",
+    "right_shoulder_conf", "left_elbow_x", "left_elbow_y", "left_elbow_conf", "right_elbow_x", "right_elbow_y",
+    "right_elbow_conf", "left_wrist_x", "left_wrist_y", "left_wrist_conf", "right_wrist_x", "right_wrist_y",
+    "right_wrist_conf", "left_hip_x", "left_hip_y", "left_hip_conf", "right_hip_x", "right_hip_y", "right_hip_conf",
+    "left_knee_x", "left_knee_y", "left_knee_conf", "right_knee_x", "right_knee_y", "right_knee_conf", "left_ankle_x",
+    "left_ankle_y", "left_ankle_conf", "right_ankle_x", "right_ankle_y", "right_ankle_conf"
+]
+
+
+def output_csv(
+    file_descriptor,
+    keypoints,
+    scores,
+    frame_number=-1,
+):
+    csv_line = str(frame_number)
+    for keypoint_index, (keypoint, score) in enumerate(zip(keypoints, scores)):
+        csv_line = csv_line + ',' + str(keypoint[0]) + ',' + str(keypoint[1]) + ',' + str(score)
+    file_descriptor.write(csv_line + '\n')
 
 
 if __name__ == '__main__':
