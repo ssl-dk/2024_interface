@@ -79,116 +79,131 @@ def main():
     is_debug_output = False
     is_csv = False
 
+    if args.debug_output:
+        os.makedirs('debugs', exist_ok=True)
+        is_debug_output = True
+    if args.csv:
+        os.makedirs('csv', exist_ok=True)
+        is_csv = True
+
+    cap_devices = [cap_device]
     if args.file is not None:
         if not os.path.exists(args.file):
             raise ValueError("file not found")
-        cap_device = args.file
-        basename = os.path.splitext(os.path.basename(args.file))[0]
-        if args.debug_output:
-            os.makedirs('debugs', exist_ok=True)
-            is_debug_output = True
-        if args.csv:
-            os.makedirs('csv', exist_ok=True)
-            is_csv = True
+        if os.path.isdir(args.file):
+            from pathlib import Path
+            directory_path = Path(args.file)
+            video_paths = []
+            for ext in ['.mp4', '.avi', '.mkv', '.mov']:
+                video_paths.extend(directory_path.glob(f'*{ext}'))
+            cap_devices = [str(path) for path in video_paths]
+        else:
+            cap_devices = [args.file]
 
     mirror = args.mirror
     model_select = args.model_select
     keypoint_score_th = args.keypoint_score
 
-    # カメラ準備 ###############################################################
-    cap = cv.VideoCapture(cap_device)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+    for cap_device in cap_devices:
+        if is_debug_output or is_csv:
+            basename = os.path.splitext(os.path.basename(cap_device))[0]
 
-    if is_debug_output:
-        debug_file_path = 'debugs/' + basename + '_debug.mp4'
-        fps = cap.get(cv.CAP_PROP_FPS)
-        frame_width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
-        debug_writer = cv.VideoWriter(debug_file_path,
-                                      cv.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+        # カメラ準備 ###############################################################
+        cap = cv.VideoCapture(cap_device)
+        cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
+        cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
 
-    if is_csv:
-        csv_file_path = 'csv/' + basename + '.csv'
-        csv_writer = open(csv_file_path, 'w', newline='\n', encoding='utf-8')
-
-    # モデルロード #############################################################
-    if model_select == 0:
-        model_path = "onnx/movenet_singlepose_lightning_4.onnx"
-        input_size = 192
-    elif model_select == 1:
-        model_path = "onnx/movenet_singlepose_thunder_4.onnx"
-        input_size = 256
-    else:
-        sys.exit(
-            "*** model_select {} is invalid value. Please use 0-1. ***".format(
-                model_select))
-
-    onnx_session = onnxruntime.InferenceSession(
-        model_path,
-        providers=[
-            'CUDAExecutionProvider',
-            'CPUExecutionProvider',
-        ],
-    )
-
-    try:
-        frame_number = 0
-        while True:
-            start_time = time.time()
-
-            # カメラキャプチャ #####################################################
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if mirror:
-                frame = cv.flip(frame, 1)  # ミラー表示
-            debug_image = copy.deepcopy(frame)
-
-            # 検出実施 ##############################################################
-            keypoints, scores = run_inference(
-                onnx_session,
-                input_size,
-                frame,
-            )
-
-            elapsed_time = time.time() - start_time
-
-            # デバッグ描画
-            debug_image = draw_debug(
-                debug_image,
-                elapsed_time,
-                keypoint_score_th,
-                keypoints,
-                scores,
-            )
-            if is_debug_output:
-                debug_writer.write(debug_image)
-            if is_csv:
-                output_csv(csv_writer, keypoints, scores, frame_number=frame_number)
-
-            frame_number += 1
-
-            # キー処理(ESC：終了) ##################################################
-            key = cv.waitKey(1)
-            if key == 27:  # ESC
-                break
-
-            # 画面反映 #############################################################
-            if not is_debug_output:
-                cv.imshow('MoveNet(singlepose) Demo', debug_image)
-
-
-    except Exception:
-        print()
-
-    finally:
         if is_debug_output:
-            debug_writer.release()
+            # 重畳動画出力準備 ######################################################
+            debug_file_path = 'debugs/' + basename + '_debug.mp4'
+            fps = cap.get(cv.CAP_PROP_FPS)
+            frame_width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+            frame_height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+            debug_writer = cv.VideoWriter(debug_file_path,
+                                          cv.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+
         if is_csv:
-            csv_writer.close()
-        cap.release()
-        cv.destroyAllWindows()
+            # CSVヘッダ出力 #######################################################
+            csv_file_path = 'csv/' + basename + '.csv'
+            csv_writer = open(csv_file_path, 'w', newline='\n', encoding='utf-8')
+            csv_writer.write(','.join(KEYPOINTS_LABELS) + '\n')
+
+        # モデルロード #############################################################
+        if model_select == 0:
+            model_path = "onnx/movenet_singlepose_lightning_4.onnx"
+            input_size = 192
+        elif model_select == 1:
+            model_path = "onnx/movenet_singlepose_thunder_4.onnx"
+            input_size = 256
+        else:
+            sys.exit(
+                "*** model_select {} is invalid value. Please use 0-1. ***".format(
+                    model_select))
+
+        onnx_session = onnxruntime.InferenceSession(
+            model_path,
+            providers=[
+                'CUDAExecutionProvider',
+                'CPUExecutionProvider',
+            ],
+        )
+
+        try:
+            frame_number = 0
+            while True:
+                start_time = time.time()
+
+                # カメラキャプチャ #####################################################
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if mirror:
+                    frame = cv.flip(frame, 1)  # ミラー表示
+                debug_image = copy.deepcopy(frame)
+
+                # 検出実施 ############################################################
+                keypoints, scores = run_inference(
+                    onnx_session,
+                    input_size,
+                    frame,
+                )
+
+                elapsed_time = time.time() - start_time
+
+                # デバッグ描画
+                debug_image = draw_debug(
+                    debug_image,
+                    elapsed_time,
+                    keypoint_score_th,
+                    keypoints,
+                    scores,
+                )
+
+                if is_debug_output:
+                    # 重畳動画の出力 #####################################################
+                    debug_writer.write(debug_image)
+                if is_csv:
+                    # CSV出力 ##########################################################
+                    output_csv(csv_writer, keypoints, scores, frame_number=frame_number)
+
+                frame_number += 1
+
+                # キー処理(ESC：終了) ####################################################
+                key = cv.waitKey(1)
+                if key == 27:  # ESC
+                    break
+
+                if not (is_debug_output or is_csv):
+                    # 画面反映 ##########################################################
+                    cv.imshow('MoveNet(singlepose) Demo', debug_image)
+
+        finally:
+            if is_debug_output:
+                debug_writer.release()
+            if is_csv:
+                csv_writer.close()
+            cap.release()
+            cv.destroyAllWindows()
 
 
 # デバッグ動画色
