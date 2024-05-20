@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os.path
 
 # original code: https://github.com/Kazuhito00/MoveNet-Python-Example
 # original author: 高橋かずひと(https://twitter.com/KzhtTkhs)
 # modify : Toshihiko Aoki
 
 import sys
+import os.path
 import copy
 import time
 import argparse
@@ -59,8 +59,8 @@ def run_inference(onnx_session, input_size, image):
     keypoints = []
     scores = []
     for index in range(17):
-        keypoint_x = int(image_width * keypoints_with_scores[index][1])
-        keypoint_y = int(image_height * keypoints_with_scores[index][0])
+        keypoint_x = image_width * keypoints_with_scores[index][1]
+        keypoint_y = image_height * keypoints_with_scores[index][0]
         score = keypoints_with_scores[index][2]
 
         keypoints.append([keypoint_x, keypoint_y])
@@ -239,9 +239,10 @@ def draw_debug(
     keypoints,
     scores,
 ):
+    int_keypoints = [[int(x) for x in origin_xy] for origin_xy in keypoints]
     debug_image = copy.deepcopy(image)
 
-    for keypoint_index, (keypoint, score) in enumerate(zip(keypoints, scores)):
+    for keypoint_index, (keypoint, score) in enumerate(zip(int_keypoints, scores)):
         if score > keypoint_score_th:
             cv.circle(
                 debug_image,
@@ -250,8 +251,8 @@ def draw_debug(
 
     for (i, j, color) in LINE_PALLET:
         if scores[i] > keypoint_score_th and scores[j] > keypoint_score_th:
-            kp_from = keypoints[i]
-            kp_to = keypoints[j]
+            kp_from = int_keypoints[i]
+            kp_to = int_keypoints[j]
             cv.line(debug_image, kp_from, kp_to, color, 2)
 
     # 処理時間
