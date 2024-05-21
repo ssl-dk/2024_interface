@@ -14,9 +14,9 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", type=str, default='csv/')
     parser.add_argument("--output_dir", type=str, default='smooth')
-    parser.add_argument("--keypoint_score", type=float, default=0.3)
-    parser.add_argument("--window_length", type=float, default=15)
-    parser.add_argument("--polyorder", type=float, default=1)
+    parser.add_argument("--keypoint_score", type=float, default=0.1)
+    parser.add_argument("--window_length", type=float, default=11)
+    parser.add_argument("--polyorder", type=float, default=2)
     args = parser.parse_args()
     return args
 
@@ -49,7 +49,7 @@ def main():
         data_interpolated = linear_interpolation(filtered.copy())
         data_smoothed = smooth_data(data_interpolated.copy(),
                                     window_length=args.window_length, polyorder=args.polyorder)
-        data_smoothed.to_csv(os.path.join(args.output_dir, basename_with_ext), index=True)
+        data_smoothed.to_csv(os.path.join(args.output_dir, basename_with_ext), index=False)
 
 
 def apply_threshold(df, joint_names, threshold):
