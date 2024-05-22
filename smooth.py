@@ -8,15 +8,22 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
+from scipy.signal import butter, filtfilt
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", type=str, default='csv/')
     parser.add_argument("--output_dir", type=str, default='smooth')
-    parser.add_argument("--keypoint_score", type=float, default=0.1)
+    parser.add_argument("--keypoint_score", type=float, default=0.3)
+    parser.add_argument("--filter", type=str, default='butter')       # or butter or savgol
+    # savgol
     parser.add_argument("--window_length", type=float, default=5)
     parser.add_argument("--polyorder", type=float, default=2)
+    # butterworth
+    parser.add_argument("--fs", type=float, default=30)               # FPS
+    parser.add_argument("--cutoff", type=float, default=3)
+    parser.add_argument("--order", type=float, default=5)
     args = parser.parse_args()
     return args
 
@@ -45,6 +52,7 @@ def main():
         filtered = apply_threshold(original.copy(), joints, args.keypoint_score)
         data_interpolated = linear_interpolation(filtered.copy())
         data_smoothed = smooth_data(data_interpolated.copy(),
+                                    cutoff=args.cutoff, fs=args.fs, order=args.order,
                                     window_length=args.window_length, polyorder=args.polyorder)
         data_smoothed.to_csv(os.path.join(args.output_dir, basename_with_ext), index=False)
 
@@ -69,11 +77,30 @@ def linear_interpolation(df):
     return df
 
 
-def smooth_data(df, window_length=15, polyorder=1):
-    for column in df.columns:
-        if column.endswith('_x') or column.endswith('_y') :
-            df[column] = savgol_filter(df[column], window_length=window_length, polyorder=polyorder)
+def smooth_data(df,
+    cutoff=3, fs=30, order=5,
+    window_length=15, polyorder=1,
+    filter_name='butter'
+):
+    if filter_name == 'savgol':
+        for column in df.columns:
+            if column.endswith('_x') or column.endswith('_y'):
+                df[column] = savgol_filter(df[column], window_length=window_length, polyorder=polyorder)
+    elif filter_name == 'butter':
+        for column in df.columns:
+            if column.endswith('_x') or column.endswith('_y'):
+                df[column] = butterworth_filter(df[column], cutoff=cutoff, fs=fs, order=order)
+    else:
+        raise ValueError('unknown fitler name:'+ filter_name)
     return df
+
+
+def butterworth_filter(data, cutoff, fs, order=5):
+    nyquist = 0.5 * fs
+    normal_cutoff = cutoff / nyquist
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    y = filtfilt(b, a, data)
+    return y
 
 
 if __name__ == '__main__':
