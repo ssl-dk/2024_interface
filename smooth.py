@@ -52,6 +52,7 @@ def main():
         filtered = apply_threshold(original.copy(), joints, args.keypoint_score)
         data_interpolated = linear_interpolation(filtered.copy())
         data_smoothed = smooth_data(data_interpolated.copy(),
+                                    filter_name=args.filter,
                                     cutoff=args.cutoff, fs=args.fs, order=args.order,
                                     window_length=args.window_length, polyorder=args.polyorder)
         data_smoothed.to_csv(os.path.join(args.output_dir, basename_with_ext), index=False)
@@ -91,7 +92,7 @@ def smooth_data(df,
             if column.endswith('_x') or column.endswith('_y'):
                 df[column] = butterworth_filter(df[column], cutoff=cutoff, fs=fs, order=order)
     else:
-        raise ValueError('unknown fitler name:'+ filter_name)
+        raise ValueError('unknown fitler name:' + filter_name)
     return df
 
 
