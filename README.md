@@ -5,8 +5,7 @@
 画像処理，AI処理を分けてカウントしたいと思っています。
 
 1. [姿勢推定情報の抽出](#姿勢推定情報の抽出)
-2. [特徴量の抽出](#特徴量の抽出)
-3. 人物照合
+2. [特徴量の抽出と人物照合](#特徴量の抽出と人物照合)
 
 # 動作環境セットアップ
 
@@ -64,9 +63,11 @@ python smooth.py --file csv/ --output smooth/
 
 ![animation.gif](animation.gif)
 
-# 特徴量の抽出
+# 特徴量の抽出と人物照合
 
-左右の足首距離群をフーリエ変換し周期（整数に繰り上げ）を得ます。 得た周期を分析用窓として利用し以下の特徴量を算出します。
+## 歩容特徴
+
+以下の特徴量を出力します。
 
 - 腕の振り（横）：左手の腰原点にしたときのX方向の最大と最小の差の最大値
 - 腕の振り（縦）：左手の腰原点にしたときのY方向の最大と最小の差の最大値 
@@ -75,3 +76,26 @@ python smooth.py --file csv/ --output smooth/
 - 足の上がり方（右）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値 
 - 足の上がり方（左）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値 
 - 頭の上下：左目のY方向の最大と最小の差の最大値
+
+## 処理概要
+
+- 任意のディレクトリより、任意のCSVファイル接尾（デフォルト値:`_1.csv`）を持たないCSVファイルをすべて姿勢推定結果の点群として読み込みます。
+- 姿勢推定結果の点群から、左右の足首距離を計算し、フーリエ変換し周期（整数に繰り上げ）を得ます。 
+- 得た周期を用いて各特長（最大値）を計算し、取得したすべての値を特徴として格納します。
+- 格納した特徴を任意のCSVから得られる特徴を用いて人物照合（cos類似度計算）し出力します。
+
+## コード実行例
+```
+python gait_feature.py --csv_path csv/ --query_path csv/A_1.csv 
+Most similar:
+Label: A, Similarity: 0.8540975736655317, FilePath :csv\A_2.csv
+Label: A, Similarity: 0.6714613928956685, FilePath :csv\A_4.csv
+Label: A, Similarity: 0.5322720785268208, FilePath :csv\A_5.csv
+Label: D, Similarity: 0.13958756021752722, FilePath :csv\D_5.csv
+Label: C, Similarity: 0.12849384890696258, FilePath :csv\C_5.csv
+Label: B, Similarity: 0.09531948084489879, FilePath :csv\B_2.csv
+Label: B, Similarity: 0.09067380674578136, FilePath :csv\B_5.csv
+Label: D, Similarity: 0.07118174803133077, FilePath :csv\D_2.csv
+Label: B, Similarity: 0.028458462898755893, FilePath :csv\B_3.csv
+Label: B, Similarity: -0.011213678026240447, FilePath :csv\B_4.csv
+```

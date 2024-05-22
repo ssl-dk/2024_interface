@@ -30,10 +30,7 @@ def main():
             raise ValueError("file not found")
         if os.path.isdir(args.file):
             from pathlib import Path
-            directory_path = Path(args.file)
-            csv_paths = []
-            for ext in ['.csv']:
-                csv_paths.extend(directory_path.glob(f'*{ext}'))
+            csv_paths = Path(args.file).glob('*.csv')
             csv_files = [str(path) for path in csv_paths]
         else:
             csv_files = [args.file]
