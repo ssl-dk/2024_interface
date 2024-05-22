@@ -94,39 +94,84 @@ def shoulder_to_hip_length(pose_history):
     return sum(shoulder_to_hip_lengths)/len(shoulder_to_hip_lengths)
 
 
-def swing_left_arm_x_max(pose_history, cycle, length):
-    # 腕の振り（横）：左手の腰原点にしたときのX方向の最大と最小の差の最大値
+def left_elbow_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['left_elbow'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
+
+
+def left_elbow_y_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['left_elbow'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def right_elbow_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['right_elbow'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
+
+
+def right_elbow_y_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['right_elbow'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def left_wrist_x_max(pose_history, cycle, length):
     return max_diff_in_window([(pose['left_wrist'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
 
 
-def swing_left_arm_y_max(pose_history, cycle, length):
-    # 腕の振り（縦）：左手の腰原点にしたときのY方向の最大と最小の差の最大値
+def left_wrist_y_max(pose_history, cycle, length):
     return max_diff_in_window([(pose['left_wrist'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
 
 
-def swing_left_ankle_x_max(pose_history, cycle, length):
-    # 歩幅（左）：左足首の腰原点にしたときのX方向の最大と最小の差の最大値
+def right_wrist_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['right_wrist'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
+
+
+def right_wrist_y_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['right_wrist'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def left_ankle_x_max(pose_history, cycle, length):
     return max_diff_in_window([(pose['left_ankle'][0] - center_hip(pose)[0]) / length  for pose in pose_history], cycle)
 
 
-def swing_right_ankle_x_max(pose_history, cycle, length):
-    # 歩幅（右）：右足首の腰原点にしたときのX方向の最大と最小の差の最大値
-    return max_diff_in_window([(pose['right_ankle'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
-
-
-def swing_left_ankle_y_max(pose_history, cycle, length):
-    # 足の上がり方（左）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値
+def left_ankle_y_max(pose_history, cycle, length):
     return max_diff_in_window([(pose['left_ankle'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
 
 
-def swing_right_ankle_y_max(pose_history, cycle, length):
-    # 足の上がり方（右）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値
+def right_ankle_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['right_ankle'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
+
+
+def right_ankle_y_max(pose_history, cycle, length):
     return max_diff_in_window([(pose['right_ankle'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
 
 
-def swing_head_y_max(pose_history, cycle, length):
-    # 頭の上下：左目のY方向の最大と最小の差の最大値
+def left_knee_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['left_knee'][0] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def left_knee_y_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['left_knee'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def right_knee_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['right_knee'][0] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def right_knee_y_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['right_knee'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def left_eye_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['left_eye'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
+
+
+def left_eye_y_max(pose_history, cycle, length):
     return max_diff_in_window([(pose['left_eye'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
+
+
+def nose_x_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['nose'][0] - center_hip(pose)[0]) / length for pose in pose_history], cycle)
+
+
+def nose_y_max(pose_history, cycle, length):
+    return max_diff_in_window([(pose['nose'][1] - center_hip(pose)[1]) / length for pose in pose_history], cycle)
 
 
 class GaitFeature:
@@ -145,13 +190,26 @@ class GaitFeature:
     def feature(self):
         length = shoulder_to_hip_length(self.pose_history)
         return [
-            swing_left_arm_x_max(self.pose_history, self.walk_cycle, length),
-            swing_left_arm_y_max(self.pose_history, self.walk_cycle, length),
-            swing_left_ankle_x_max(self.pose_history, self.walk_cycle, length),
-            swing_right_ankle_x_max(self.pose_history, self.walk_cycle, length),
-            swing_left_ankle_y_max(self.pose_history, self.walk_cycle, length),
-            swing_right_ankle_y_max(self.pose_history, self.walk_cycle, length),
-            swing_head_y_max(self.pose_history, self.walk_cycle, length),
+            # right_wrist_x_max(self.pose_history, self.walk_cycle, length),
+            # right_wrist_y_max(self.pose_history, self.walk_cycle, length),
+            left_wrist_x_max(self.pose_history, self.walk_cycle, length),
+            left_wrist_y_max(self.pose_history, self.walk_cycle, length),
+            # right_elbow_x_max(self.pose_history, self.walk_cycle, length),
+            # right_elbow_y_max(self.pose_history, self.walk_cycle, length),
+            left_elbow_x_max(self.pose_history, self.walk_cycle, length),
+            left_elbow_y_max(self.pose_history, self.walk_cycle, length),
+            left_ankle_x_max(self.pose_history, self.walk_cycle, length),
+            left_ankle_y_max(self.pose_history, self.walk_cycle, length),
+            right_ankle_x_max(self.pose_history, self.walk_cycle, length),
+            right_ankle_y_max(self.pose_history, self.walk_cycle, length),
+            left_knee_x_max(self.pose_history, self.walk_cycle, length),
+            left_knee_y_max(self.pose_history, self.walk_cycle, length),
+            right_knee_x_max(self.pose_history, self.walk_cycle, length),
+            right_knee_y_max(self.pose_history, self.walk_cycle, length),
+            # left_eye_x_max(self.pose_history, self.walk_cycle, length),
+            left_eye_y_max(self.pose_history, self.walk_cycle, length),
+            # nose_x_max(self.pose_history, self.walk_cycle, length),
+            # nose_y_max(self.pose_history, self.walk_cycle, length),
         ]
 
 
