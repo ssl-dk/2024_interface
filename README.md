@@ -1,4 +1,4 @@
-# 2024年度 5月 雑誌interface向けコード 現場プロの画像処理100（仮）
+# 2024年 5月 雑誌 [interface](https://interface.cqpub.co.jp/) 向けコード 現場プロの画像処理100（仮）
 
 ## 要件
 
@@ -7,7 +7,6 @@
 1. [姿勢推定情報の抽出](#姿勢推定情報の抽出)
 2. [特徴量の抽出](#特徴量の抽出)
 3. 人物照合
-4. 上記の際に，どこかで利用した画像補正　（あれば）
 
 # 動作環境セットアップ
 
@@ -33,7 +32,7 @@ wget https://github.com/Kazuhito00/MoveNet-Python-Example/raw/main/onnx/movenet_
 
 ### コード実行例
 ```
-python movenet_singlepose_onnx.py --file interface_videos/A_1.mp4 --keypoint_score 0.0 --debug_output --csv
+python estimate_pose.py --file interface_videos/A_1.mp4 --keypoint_score 0.0 --debug_output --csv
 ```
 
 ### 重畳動画参考
@@ -50,14 +49,29 @@ frame_number,nose_x,nose_y,nose_conf,left_eye_x,left_eye_y,left_eye_conf,right_e
 :
 ```
 
+## 外れ値の補正とスムージング（参考）
+CSVファイルに出力された姿勢推定情報をスムージングします。
+
+以下実行では`smooth`配下にスムージングされたCSVが出力されます（今回は利用しないです）。
+
+### コード実行例
+```
+python smooth.py --file csv/ --output smooth/
+```
+
+## 姿勢推定の点群可視化（参考）
+`visualize_pose.ipynb`を`jupyter`より実行し、任意のCSVファイルを選択して可視化ができます。
+
+![animation.gif](animation.gif)
+
 # 特徴量の抽出
 
-CSVファイルより以下のような特徴を抽出します。
+左右の足首距離群をフーリエ変換し周期（整数に繰り上げ）を得ます。 得た周期を分析用窓として利用し以下の特徴量を算出します。
 
-- 歩行速度
-- 歩幅（右足）
-- 歩幅（左足）
-- 手のふり幅（左手）
-- 歩行1サイクルのフレーム数
-- 頭の上下運動
-
+- 腕の振り（横）：左手の腰原点にしたときのX方向の最大と最小の差の最大値
+- 腕の振り（縦）：左手の腰原点にしたときのY方向の最大と最小の差の最大値 
+- 歩幅（右）：右足首の腰原点にしたときのX方向の最大と最小の差の最大値 
+- 歩幅（左）：左足首の腰原点にしたときのX方向の最大と最小の差の最大値 
+- 足の上がり方（右）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値 
+- 足の上がり方（左）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値 
+- 頭の上下：左目のY方向の最大と最小の差の最大値
