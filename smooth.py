@@ -15,7 +15,7 @@ def get_args():
     parser.add_argument("--file", type=str, default='csv/')
     parser.add_argument("--output_dir", type=str, default='smooth')
     parser.add_argument("--keypoint_score", type=float, default=0.1)
-    parser.add_argument("--window_length", type=float, default=11)
+    parser.add_argument("--window_length", type=float, default=5)
     parser.add_argument("--polyorder", type=float, default=2)
     args = parser.parse_args()
     return args
