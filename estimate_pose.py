@@ -32,6 +32,8 @@ def get_args():
     # add
     parser.add_argument("--debug_output",  action='store_true')
     parser.add_argument('--csv', action='store_true')
+
+    parser.add_argument('--detection', action='store_true')
     parser.add_argument('--score_th', type=float, default=0.4)
     parser.add_argument('--nms_th', type=float, default=0.85)
 
@@ -114,13 +116,13 @@ def main():
         cap = cv.VideoCapture(cap_device)
         cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
         cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+        fps = cap.get(cv.CAP_PROP_FPS)
+        frame_width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
 
         if is_debug_output:
             # 重畳動画出力準備 ######################################################
             debug_file_path = 'debugs/' + basename + '_debug.mp4'
-            fps = cap.get(cv.CAP_PROP_FPS)
-            frame_width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
-            frame_height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
             debug_writer = cv.VideoWriter(debug_file_path,
                                           cv.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
 
@@ -134,9 +136,11 @@ def main():
         input_size = -1
         if model_select == 0:
             model_path = "onnx/movenet_singlepose_lightning_4.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
             input_size = 192
         elif model_select == 1:
             model_path = "onnx/movenet_singlepose_thunder_4.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
             input_size = 256
         elif model_select == 2:
             model_path = "onnx/litehrnet_18_coco_Nx256x192.onnx"
@@ -149,6 +153,10 @@ def main():
                 "*** model_select {} is invalid value. Please use 0-1. ***".format(
                     model_select))
 
+        if args.detection:
+            from damoyolo_onnx import DAMOYOLO
+            damo_yolo = DAMOYOLO(model_path=yolo_path)
+
         if model_select < 2:
             onnx_session = onnxruntime.InferenceSession(
                 model_path,
@@ -158,8 +166,6 @@ def main():
                 ],
             )
         else:
-            from damoyolo_onnx import DAMOYOLO
-            damo_yolo = DAMOYOLO(model_path=yolo_path)
             from HRNET import HRNET
             hrnet = HRNET(model_path)
 
@@ -174,33 +180,55 @@ def main():
                     break
                 if mirror:
                     frame = cv.flip(frame, 1)  # ミラー表示
-                debug_image = copy.deepcopy(frame)
+
+                if args.detection:
+                    bboxes, scores, class_ids = damo_yolo(frame, score_th=args.score_th, nms_th=args.nms_th)
+                    max_index = np.argmax(scores)
 
                 # 検出実施 ############################################################
                 if model_select < 2:
+
+                    if args.detection:
+                        x1, y1, x2, y2 = bboxes[max_index]
+                        box_width, box_height = x2 - x1, y2 - y1
+
+                        # Enlarge search region
+                        x1 = max(int(x1 - box_width * 0.1), 0)
+                        x2 = min(int(x2 + box_width * 0.1), frame_width)
+                        y1 = max(int(y1 - box_height * 0.1), 0)
+                        y2 = min(int(y2 + box_height * 0.1), frame_height)
+
+                        crop = frame[y1:y2, x1:x2]
+                    else:
+                        crop = frame
                     keypoints, scores = run_inference(
                         onnx_session,
                         input_size,
-                        frame,
+                        crop,
                     )
+
+                    if args.detection:
+                        # Fix the body pose to the original image
+                        keypoints = [[x + x1, y + y1] for [x, y] in keypoints]
                 else:
-
-                    bboxes, scores, class_ids = damo_yolo(frame, score_th=args.score_th, nms_th=args.nms_th)
-                    max_index = np.argmax(scores)
-                    _, keypoints, scores = hrnet(
-                        frame, [[bboxes[max_index]], [scores[max_index]], [class_ids[max_index]]])
-                    keypoints = keypoints[0]
-
+                    deteciton = None
+                    if args.detection:
+                        deteciton = [[bboxes[max_index]], [scores[max_index]], [class_ids[max_index]]]
+                    _, keypoints, scores = hrnet(frame, deteciton)
+                    if args.detection:
+                        keypoints = keypoints[0]
                 elapsed_time = time.time() - start_time
 
-                # デバッグ描画
-                debug_image = draw_debug(
-                    debug_image,
-                    elapsed_time,
-                    keypoint_score_th,
-                    keypoints,
-                    scores,
-                )
+                if is_debug_output or not (is_debug_output or is_csv):
+                    debug_image = copy.deepcopy(frame)
+                    # デバッグ描画
+                    debug_image = draw_debug(
+                        debug_image,
+                        elapsed_time,
+                        keypoint_score_th,
+                        keypoints,
+                        scores,
+                    )
 
                 if is_debug_output:
                     # 重畳動画の出力 #####################################################

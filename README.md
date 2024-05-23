@@ -54,11 +54,13 @@ python estimate_pose.py --file interface_videos/A_1.mp4 --keypoint_score 0.0 --d
 model_selectはそれぞれ以下のように対応しています。
 別の同系統モデルでも利用は可能だと考えます。
 ```
-       if model_select == 0:
+        if model_select == 0:
             model_path = "onnx/movenet_singlepose_lightning_4.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
             input_size = 192
         elif model_select == 1:
             model_path = "onnx/movenet_singlepose_thunder_4.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
             input_size = 256
         elif model_select == 2:
             model_path = "onnx/litehrnet_18_coco_Nx256x192.onnx"
@@ -66,6 +68,7 @@ model_selectはそれぞれ以下のように対応しています。
         elif model_select == 3:
             model_path = "onnx/hrnet_coco_w48_384x288.onnx"
             yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
+
 ```
 
 ### 重畳動画参考
