@@ -17,21 +17,55 @@ pip install -r requirements.txt
 
 # 姿勢推定情報の抽出
 
-[MoveNet-Python-Example](https://github.com/Kazuhito00/MoveNet-Python-Example)を修正して利用しています。
+以下のコードおよびモデルを利用しています。
+
+- [MoveNet-Python-Example](https://github.com/Kazuhito00/MoveNet-Python-Example) : estimate_pose.py の母体コードとして修正利用
+- [ONNX-HRNET-Human-Pose-Estimation](https://github.com/ibaiGorordo/ONNX-HRNET-Human-Pose-Estimation): HRNET onnx推論コードを利用
+- [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo): HRNet/Lite HRNet onnxモデルを取得
+- [DAMO-YOLO-ONNX-Sample](https://github.com/Kazuhito00/DAMO-YOLO-ONNX-Sample): DAMO-YOLO推論コードおよびモデルを利用
 
 ## モデル配備
+
+### MoveNetおよびDAMO-YOLOモデル
 ```
 mkdir onnx
 cd onnx
 wget https://github.com/Kazuhito00/MoveNet-Python-Example/raw/main/onnx/movenet_singlepose_lightning_4.onnx
+wget https://github.com/Kazuhito00/DAMO-YOLO-ONNX-Sample/blob/main/damoyolo/model/damoyolo_tinynasL20_T_418.onnx
 ```
+
+### HRNet/Lite HRNetモデル
+
+[PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo)よりモデルディレクトリの内の`download.sh`を実行して取得・展開してください。
+
+- [268_Lite-HRNet](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/268_Lite-HRNet)
+- [271_HRNet](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/271_HRNet)
+
+
 
 ## 重畳動画とCSVファイルの取得
 重畳動画とCSVファイルはコード実行パス配下の`debugs`、`csv`にそれぞれ出力されます。
 
 ### コード実行例
 ```
-python estimate_pose.py --file interface_videos/A_1.mp4 --keypoint_score 0.0 --debug_output --csv
+python estimate_pose.py --file interface_videos/A_1.mp4 --keypoint_score 0.0 --debug_output --csv --model_select 2
+```
+
+model_selectはそれぞれ以下のように対応しています。
+別の同系統モデルでも利用は可能だと考えます。
+```
+       if model_select == 0:
+            model_path = "onnx/movenet_singlepose_lightning_4.onnx"
+            input_size = 192
+        elif model_select == 1:
+            model_path = "onnx/movenet_singlepose_thunder_4.onnx"
+            input_size = 256
+        elif model_select == 2:
+            model_path = "onnx/litehrnet_18_coco_Nx256x192.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
+        elif model_select == 3:
+            model_path = "onnx/hrnet_coco_w48_384x288.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
 ```
 
 ### 重畳動画参考
@@ -86,16 +120,16 @@ python smooth.py --file csv/ --output smooth/
 
 ## コード実行例
 ```
-python gait_feature.py --csv_path csv/ --query_path csv/A_1.csv 
+python gait_feature.py --csv_path csv --query_path csv/D_1.csv            
 Most similar:
-Label: A, Similarity: 0.8540975736655317, FilePath :csv\A_2.csv
-Label: A, Similarity: 0.6714613928956685, FilePath :csv\A_4.csv
-Label: A, Similarity: 0.5322720785268208, FilePath :csv\A_5.csv
-Label: D, Similarity: 0.13958756021752722, FilePath :csv\D_5.csv
-Label: C, Similarity: 0.12849384890696258, FilePath :csv\C_5.csv
-Label: B, Similarity: 0.09531948084489879, FilePath :csv\B_2.csv
-Label: B, Similarity: 0.09067380674578136, FilePath :csv\B_5.csv
-Label: D, Similarity: 0.07118174803133077, FilePath :csv\D_2.csv
-Label: B, Similarity: 0.028458462898755893, FilePath :csv\B_3.csv
-Label: B, Similarity: -0.011213678026240447, FilePath :csv\B_4.csv
+Label: D, Similarity: 0.9200582218489516, FilePath :csv\D_2.csv
+Label: D, Similarity: 0.9044775399384477, FilePath :csv\D_3.csv
+Label: D, Similarity: 0.8766626198820663, FilePath :csv\D_5.csv
+Label: D, Similarity: 0.8409126038988369, FilePath :csv\D_4.csv
+Label: A, Similarity: 0.390893531998564, FilePath :csv\A_3.csv
+Label: C, Similarity: 0.13235099952495646, FilePath :csv\C_3.csv
+Label: C, Similarity: 0.12360815945565078, FilePath :csv\C_2.csv
+Label: B, Similarity: 0.07075141612340659, FilePath :csv\B_5.csv
+Label: C, Similarity: -0.07590349294373826, FilePath :csv\C_4.csv
+Label: A, Similarity: -0.11936907475651198, FilePath :csv\A_2.csv
 ```

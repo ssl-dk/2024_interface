@@ -32,6 +32,8 @@ def get_args():
     # add
     parser.add_argument("--debug_output",  action='store_true')
     parser.add_argument('--csv', action='store_true')
+    parser.add_argument('--score_th', type=float, default=0.4)
+    parser.add_argument('--nms_th', type=float, default=0.85)
 
     args = parser.parse_args()
 
@@ -138,8 +140,10 @@ def main():
             input_size = 256
         elif model_select == 2:
             model_path = "onnx/litehrnet_18_coco_Nx256x192.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
         elif model_select == 3:
             model_path = "onnx/hrnet_coco_w48_384x288.onnx"
+            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
         else:
             sys.exit(
                 "*** model_select {} is invalid value. Please use 0-1. ***".format(
@@ -154,8 +158,8 @@ def main():
                 ],
             )
         else:
-            hog = cv.HOGDescriptor()
-            hog.setSVMDetector(cv.HOGDescriptor_getDefaultPeopleDetector())
+            from damoyolo_onnx import DAMOYOLO
+            damo_yolo = DAMOYOLO(model_path=yolo_path)
             from HRNET import HRNET
             hrnet = HRNET(model_path)
 
@@ -180,9 +184,11 @@ def main():
                         frame,
                     )
                 else:
-                    boxes, weights = hog.detectMultiScale(frame, winStride=(4, 4), padding=(8, 8), scale=1.04)
-                    boxes = [[x, y, x + w, y + h] for (x, y, w, h) in boxes]
-                    _, keypoints, scores = hrnet(frame, [[boxes[0]], [-1.], [0]])
+
+                    bboxes, scores, class_ids = damo_yolo(frame, score_th=args.score_th, nms_th=args.nms_th)
+                    max_index = np.argmax(scores)
+                    _, keypoints, scores = hrnet(
+                        frame, [[bboxes[max_index]], [scores[max_index]], [class_ids[max_index]]])
                     keypoints = keypoints[0]
 
                 elapsed_time = time.time() - start_time
