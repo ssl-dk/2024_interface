@@ -13,12 +13,14 @@ from sklearn.preprocessing import StandardScaler
 import argparse
 
 
-def from_csv(file_path):
-    pose_history = []
+def from_csv(file_path, conf_threshold=0.05):
+    pose_max_length_history = []
+    pose_temp_history = []
     with open(file_path, mode='r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             pose = {}
+            all_conf = []
             for key in row:
                 if '_x' in key or '_y' in key or '_conf' in key:
                     base_key = key.rsplit('_', 1)[0]
@@ -29,15 +31,23 @@ def from_csv(file_path):
                     elif '_y' in key:
                         pose[base_key][1] = float(row[key])
                     elif '_conf' in key:
-                        # 使ってない
-                        pose[base_key][2] = float(row[key])
+                        all_conf.append(float(row[key]))
                 if 'frame_number' == key:
                     # 使ってない
                     pose[key] = int(row[key])
-            pose_history.append(pose)
+
+            if conf_threshold > 0. and sum(all_conf)/len(all_conf) < conf_threshold:
+                if len(pose_temp_history) > len(pose_max_length_history):
+                    pose_max_length_history = pose_temp_history.copy()
+                pose_temp_history = []
+            else:
+                pose_temp_history.append(pose)
+
+    if len(pose_temp_history) > len(pose_max_length_history):
+        pose_max_length_history = pose_temp_history
 
     # [{"nose" :[100, 200, 1.0] ...} ...
-    return pose_history
+    return pose_max_length_history
 
 
 def lr_ankle_distance(pose_history):
@@ -176,11 +186,11 @@ def nose_y_max(pose_history, cycle, length):
 
 class GaitFeature:
 
-    def __init__(self, csv_filepath, fps=30):
+    def __init__(self, csv_filepath, fps=30, conf_threshold=0):
         self.csv_filepath = csv_filepath
         self.fps = fps
-        self.pose_history = from_csv(csv_filepath)
-        self.walk_cycle = walk_cycle(self.pose_history, self.fps)
+        self.pose_history = from_csv(csv_filepath, conf_threshold=conf_threshold)
+        self._feature = None
 
     @property
     def label(self):
@@ -188,29 +198,32 @@ class GaitFeature:
 
     @property
     def feature(self):
-        length = shoulder_to_hip_length(self.pose_history)
-        return [
-            # right_wrist_x_max(self.pose_history, self.walk_cycle, length),
-            # right_wrist_y_max(self.pose_history, self.walk_cycle, length),
-            left_wrist_x_max(self.pose_history, self.walk_cycle, length),
-            left_wrist_y_max(self.pose_history, self.walk_cycle, length),
-            # right_elbow_x_max(self.pose_history, self.walk_cycle, length),
-            # right_elbow_y_max(self.pose_history, self.walk_cycle, length),
-            left_elbow_x_max(self.pose_history, self.walk_cycle, length),
-            left_elbow_y_max(self.pose_history, self.walk_cycle, length),
-            left_ankle_x_max(self.pose_history, self.walk_cycle, length),
-            left_ankle_y_max(self.pose_history, self.walk_cycle, length),
-            right_ankle_x_max(self.pose_history, self.walk_cycle, length),
-            right_ankle_y_max(self.pose_history, self.walk_cycle, length),
-            left_knee_x_max(self.pose_history, self.walk_cycle, length),
-            left_knee_y_max(self.pose_history, self.walk_cycle, length),
-            right_knee_x_max(self.pose_history, self.walk_cycle, length),
-            right_knee_y_max(self.pose_history, self.walk_cycle, length),
-            # left_eye_x_max(self.pose_history, self.walk_cycle, length),
-            left_eye_y_max(self.pose_history, self.walk_cycle, length),
-            # nose_x_max(self.pose_history, self.walk_cycle, length),
-            # nose_y_max(self.pose_history, self.walk_cycle, length),
-        ]
+        if self._feature is None:
+            cycle = walk_cycle(self.pose_history, self.fps)
+            length = shoulder_to_hip_length(self.pose_history)
+            self._feature = [
+                # right_wrist_x_max(self.pose_history, self.walk_cycle, length),
+                # right_wrist_y_max(self.pose_history, self.walk_cycle, length),
+                left_wrist_x_max(self.pose_history, cycle, length),
+                left_wrist_y_max(self.pose_history, cycle, length),
+                # right_elbow_x_max(self.pose_history, cycle, length),
+                # right_elbow_y_max(self.pose_history, cycle, length),
+                left_elbow_x_max(self.pose_history, cycle, length),
+                left_elbow_y_max(self.pose_history, cycle, length),
+                left_ankle_x_max(self.pose_history, cycle, length),
+                left_ankle_y_max(self.pose_history, cycle, length),
+                right_ankle_x_max(self.pose_history, cycle, length),
+                right_ankle_y_max(self.pose_history, cycle, length),
+                left_knee_x_max(self.pose_history, cycle, length),
+                left_knee_y_max(self.pose_history, cycle, length),
+                right_knee_x_max(self.pose_history, cycle, length),
+                right_knee_y_max(self.pose_history, cycle, length),
+                # left_eye_x_max(self.pose_history, cycle, length),
+                left_eye_y_max(self.pose_history, cycle, length),
+                # nose_x_max(self.pose_history, cycle, length),
+                # nose_y_max(self.pose_history, cycle, length),
+            ]
+        return self._feature
 
 
 class Database:
@@ -222,6 +235,7 @@ class Database:
         save_path='./database.npy',
         exclude_suffix='_1.csv',
         fps=30,
+        conf_threshold=0.
     ):
         self.labels = []
         self.file_paths = []
@@ -238,18 +252,18 @@ class Database:
         if os.path.exists(save_path) and self.norm_model is not None:
             self.load_db()
         elif csv_path is not None and self.norm_model_path is not None and self.save_path is not None:
-            self.init_db(csv_path, exclude_suffix=exclude_suffix, fps=fps)
+            self.init_db(csv_path, exclude_suffix=exclude_suffix, fps=fps, conf_threshold=conf_threshold)
         else:
             raise ValueError('require save_path or csv_path')
 
-    def init_db(self, csv_path, exclude_suffix='_1.csv', fps=30):
+    def init_db(self, csv_path, exclude_suffix='_1.csv', fps=30, conf_threshold=0.):
         if not os.path.isdir(csv_path):
             raise ValueError('require dir: ' + csv_path)
         gait_features = []
         for filepath in [str(path) for path in Path(csv_path).glob('*.csv')]:
             if filepath.endswith(exclude_suffix):
                 continue
-            gait_features.append(GaitFeature(filepath, fps=fps))
+            gait_features.append(GaitFeature(filepath, fps=fps, conf_threshold=conf_threshold))
         if self.norm_model is None:
             norm_model = StandardScaler()
             norm_model.fit([gait_feature.feature for gait_feature in gait_features])
@@ -303,6 +317,7 @@ def get_args():
     parser.add_argument("--exclude_suffix", type=str, default='_1.csv')
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--query_path", type=str, default=None)
+    parser.add_argument("--conf", type=float, default=0.)
     args = parser.parse_args()
     return args
 
@@ -316,7 +331,8 @@ def main():
         norm_model_path=args.norm_model_path,   # modelファイルが出力されます
         save_path=args.save_path,               # databaseファイルが出力されます
         exclude_suffix=args.exclude_suffix,     # CSVファイルより入力を除く接尾を指定します
-        fps=fps
+        fps=fps,
+        conf_threshold=args.conf
     )
 
     if args.query_path is not None and os.path.isfile(args.query_path):
