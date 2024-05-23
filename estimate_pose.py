@@ -129,24 +129,35 @@ def main():
             csv_writer.write(','.join(KEYPOINTS_LABELS) + '\n')
 
         # モデルロード #############################################################
+        input_size = -1
         if model_select == 0:
             model_path = "onnx/movenet_singlepose_lightning_4.onnx"
             input_size = 192
         elif model_select == 1:
             model_path = "onnx/movenet_singlepose_thunder_4.onnx"
             input_size = 256
+        elif model_select == 2:
+            model_path = "onnx/litehrnet_18_coco_Nx256x192.onnx"
+        elif model_select == 3:
+            model_path = "onnx/hrnet_coco_w48_384x288.onnx"
         else:
             sys.exit(
                 "*** model_select {} is invalid value. Please use 0-1. ***".format(
                     model_select))
 
-        onnx_session = onnxruntime.InferenceSession(
-            model_path,
-            providers=[
-                'CUDAExecutionProvider',
-                'CPUExecutionProvider',
-            ],
-        )
+        if model_select < 2:
+            onnx_session = onnxruntime.InferenceSession(
+                model_path,
+                providers=[
+                    'CUDAExecutionProvider',
+                    'CPUExecutionProvider',
+                ],
+            )
+        else:
+            hog = cv.HOGDescriptor()
+            hog.setSVMDetector(cv.HOGDescriptor_getDefaultPeopleDetector())
+            from HRNET import HRNET
+            hrnet = HRNET(model_path)
 
         try:
             frame_number = 0
@@ -162,11 +173,17 @@ def main():
                 debug_image = copy.deepcopy(frame)
 
                 # 検出実施 ############################################################
-                keypoints, scores = run_inference(
-                    onnx_session,
-                    input_size,
-                    frame,
-                )
+                if model_select < 2:
+                    keypoints, scores = run_inference(
+                        onnx_session,
+                        input_size,
+                        frame,
+                    )
+                else:
+                    boxes, weights = hog.detectMultiScale(frame, winStride=(4, 4), padding=(8, 8), scale=1.04)
+                    boxes = [[x, y, x + w, y + h] for (x, y, w, h) in boxes]
+                    _, keypoints, scores = hrnet(frame, [[boxes[0]], [-1.], [0]])
+                    keypoints = keypoints[0]
 
                 elapsed_time = time.time() - start_time
 
