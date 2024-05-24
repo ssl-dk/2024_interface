@@ -84,10 +84,10 @@ def main():
     is_csv = False
 
     if args.debug_output:
-        os.makedirs('debugs', exist_ok=True)
+        os.makedirs('hrnet_debugs', exist_ok=True)
         is_debug_output = True
     if args.csv:
-        os.makedirs('csv', exist_ok=True)
+        os.makedirs('hrnet_csv', exist_ok=True)
         is_csv = True
 
     cap_devices = [cap_device]
@@ -183,16 +183,16 @@ def main():
 
                 if args.detection:
                     bboxes, scores, class_ids = damo_yolo(frame, score_th=args.score_th, nms_th=args.nms_th)
+                    # 動画には一人のみ写っているものとし、最大スコアを持つ矩形を処理対象とする
                     max_index = np.argmax(scores)
 
                 # 検出実施 ############################################################
                 if model_select < 2:
-
                     if args.detection:
+                        # HRNETと同等の処理を記載（関心矩形切出）
                         x1, y1, x2, y2 = bboxes[max_index]
                         box_width, box_height = x2 - x1, y2 - y1
 
-                        # Enlarge search region
                         x1 = max(int(x1 - box_width * 0.1), 0)
                         x2 = min(int(x2 + box_width * 0.1), frame_width)
                         y1 = max(int(y1 - box_height * 0.1), 0)
@@ -206,17 +206,18 @@ def main():
                         input_size,
                         crop,
                     )
-
                     if args.detection:
                         # Fix the body pose to the original image
                         keypoints = [[x + x1, y + y1] for [x, y] in keypoints]
                 else:
+                    # HRNETはモデルに矩形入力に応じる引数がある
                     deteciton = None
                     if args.detection:
                         deteciton = [[bboxes[max_index]], [scores[max_index]], [class_ids[max_index]]]
                     _, keypoints, scores = hrnet(frame, deteciton)
                     if args.detection:
                         keypoints = keypoints[0]
+
                 elapsed_time = time.time() - start_time
 
                 if is_debug_output or not (is_debug_output or is_csv):

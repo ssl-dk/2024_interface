@@ -67,7 +67,7 @@ def walk_cycle(pose_history, fps=30):
 
 
 def max_diff_in_window(arr, k):
-    # kサイズのwindowをスライド、window内の最大-最小を計算しarr中の最大を求める
+    # kサイズのwindow内のdiffをスライド計算。arr中のdiff最大を求める
     if not arr or k <= 0:
         return 0.
 
@@ -88,6 +88,7 @@ def max_diff_in_window(arr, k):
 
 
 def center(a, b):
+    # xy中点
     return [(a[0] + b[0])/2, (a[1] + b[1])/2]
 
 
@@ -96,6 +97,7 @@ def center_hip(pose):
 
 
 def shoulder_to_hip_length(pose_history):
+    # 簡易スケールとして肩-尻yの平均を取得
     shoulder_to_hip_lengths = []
     for pose in pose_history:
         center_shoulder = center(pose['left_shoulder'], pose['right_shoulder'])
@@ -202,23 +204,23 @@ class GaitFeature:
             cycle = walk_cycle(self.pose_history, self.fps)
             length = shoulder_to_hip_length(self.pose_history)
             self._feature = [
-                # right_wrist_x_max(self.pose_history, self.walk_cycle, length),
-                # right_wrist_y_max(self.pose_history, self.walk_cycle, length),
+                right_wrist_x_max(self.pose_history, cycle, length),
+                right_wrist_y_max(self.pose_history, cycle, length),
                 left_wrist_x_max(self.pose_history, cycle, length),
                 left_wrist_y_max(self.pose_history, cycle, length),
+                # left_elbow_x_max(self.pose_history, cycle, length),
+                # left_elbow_y_max(self.pose_history, cycle, length),
                 # right_elbow_x_max(self.pose_history, cycle, length),
                 # right_elbow_y_max(self.pose_history, cycle, length),
-                left_elbow_x_max(self.pose_history, cycle, length),
-                left_elbow_y_max(self.pose_history, cycle, length),
-                left_ankle_x_max(self.pose_history, cycle, length),
-                left_ankle_y_max(self.pose_history, cycle, length),
+                # left_ankle_x_max(self.pose_history, cycle, length),
+                # left_ankle_y_max(self.pose_history, cycle, length),
                 right_ankle_x_max(self.pose_history, cycle, length),
                 right_ankle_y_max(self.pose_history, cycle, length),
                 left_knee_x_max(self.pose_history, cycle, length),
                 left_knee_y_max(self.pose_history, cycle, length),
                 right_knee_x_max(self.pose_history, cycle, length),
                 right_knee_y_max(self.pose_history, cycle, length),
-                # left_eye_x_max(self.pose_history, cycle, length),
+                left_eye_x_max(self.pose_history, cycle, length),
                 left_eye_y_max(self.pose_history, cycle, length),
                 # nose_x_max(self.pose_history, cycle, length),
                 # nose_y_max(self.pose_history, cycle, length),
@@ -299,14 +301,6 @@ class Database:
         top_similar_indices = np.argsort(similarities)[::-1][:top_n]
         results = [(self.labels[i], similarities[i], self.file_paths[i]) for i in top_similar_indices]
         return results
-
-    def add_vector(self, gait_feature):
-        # 未使用（正規化を再計算した方がいい）
-        if self.norm_model is None:
-            raise ValueError('require norm_model')
-        self.labels.append(gait_feature.label)
-        self.file_paths.append(gait_feature.csv_filepath)
-        self.vectors.append(self.norm_model.transform([gait_feature.feature])[0])
 
 
 def get_args():
