@@ -204,8 +204,6 @@ class GaitFeature:
             cycle = walk_cycle(self.pose_history, self.fps)
             length = shoulder_to_hip_length(self.pose_history)
             self._feature = [
-                cycle,
-                length,
                 right_wrist_x_max(self.pose_history, cycle, length),
                 right_wrist_y_max(self.pose_history, cycle, length),
                 left_wrist_x_max(self.pose_history, cycle, length),
