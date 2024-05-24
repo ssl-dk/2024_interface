@@ -104,15 +104,22 @@ python smooth.py --file csv/ --output smooth/
 
 ## 歩容特徴
 
-以下の特徴量を出力します。
+以下の特徴量を用いて照合します。
 
-- 腕の振り（横）：左手の腰原点にしたときのX方向の最大と最小の差の最大値
-- 腕の振り（縦）：左手の腰原点にしたときのY方向の最大と最小の差の最大値 
-- 歩幅（右）：右足首の腰原点にしたときのX方向の最大と最小の差の最大値 
-- 歩幅（左）：左足首の腰原点にしたときのX方向の最大と最小の差の最大値 
+- 左腕の振り（横）：左手首の腰原点にしたときのX方向の最大と最小の差の最大値
+- 左腕の振り（縦）：左手首の腰原点にしたときのY方向の最大と最小の差の最大値
+- 右腕の振り（横）：右手首の腰原点にしたときのX方向の最大と最小の差の最大値
+- 右腕の振り（縦）：右手首の腰原点にしたときのY方向の最大と最小の差の最大値 
+- 足のひざ上がり方（左）：左ひざの腰原点にしたときのY方向の最大と最小の差の最大値- 足のひざ移動（右）：右ひざの腰原点にしたときのX方向の最大と最小の差の最大値 
+- 足のひざ移動（左）：左ひざの腰原点にしたときのX方向の最大と最小の差の最大値
+- 足のひざ上がり方（右）：右ひざの腰原点にしたときのY方向の最大と最小の差の最大値 
+- 足のひざ移動（右）：右ひざの腰原点にしたときのX方向の最大と最小の差の最大値
+- 歩幅（左）：左足首の腰原点にしたときのX方向の最大と最小の差の最大値
+- 足の上がり方（左）：左足首の腰原点にしたときのY方向の最大と最小の差の最大値- 足の上がり方（左）：左足首の腰原点にしたときのY方向の最大と最小の差の最大値
+- 歩幅（右）：右足首の腰原点にしたときのX方向の最大と最小の差の最大値
 - 足の上がり方（右）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値 
-- 足の上がり方（左）：右足首の腰原点にしたときのY方向の最大と最小の差の最大値 
 - 頭の上下：左目のY方向の最大と最小の差の最大値
+- 頭の移動：左目のX方向の最大と最小の差の最大値
 
 ## 処理概要
 
@@ -123,16 +130,17 @@ python smooth.py --file csv/ --output smooth/
 
 ## コード実行例
 ```
-python gait_feature.py --csv_path csv --query_path csv/D_1.csv            
-Most similar:
-Label: D, Similarity: 0.9200582218489516, FilePath :csv\D_2.csv
-Label: D, Similarity: 0.9044775399384477, FilePath :csv\D_3.csv
-Label: D, Similarity: 0.8766626198820663, FilePath :csv\D_5.csv
-Label: D, Similarity: 0.8409126038988369, FilePath :csv\D_4.csv
-Label: A, Similarity: 0.390893531998564, FilePath :csv\A_3.csv
-Label: C, Similarity: 0.13235099952495646, FilePath :csv\C_3.csv
-Label: C, Similarity: 0.12360815945565078, FilePath :csv\C_2.csv
-Label: B, Similarity: 0.07075141612340659, FilePath :csv\B_5.csv
-Label: C, Similarity: -0.07590349294373826, FilePath :csv\C_4.csv
-Label: A, Similarity: -0.11936907475651198, FilePath :csv\A_2.csv
+python gait_feature.py --csv_path csv --query_path csv/A_1.csv            
+| label | similarity | file_path |
+| - | - | - |                                           
+| A | 0.7450044234012938 | 00_lightning_csv\A_2.csv |   
+| A | 0.4521558599142875 | 00_lightning_csv\A_4.csv |   
+| D | 0.29694326155269396 | 00_lightning_csv\D_5.csv |  
+| A | 0.20545524107553953 | 00_lightning_csv\A_3.csv |  
+| B | 0.19316869080360857 | 00_lightning_csv\B_2.csv |  
+| B | 0.05426617801114495 | 00_lightning_csv\B_4.csv |  
+| D | 0.024470875058635266 | 00_lightning_csv\D_2.csv | 
+| D | 0.008471934158318227 | 00_lightning_csv\D_4.csv | 
+| A | -0.011680579291395527 | 00_lightning_csv\A_5.csv |
+| D | -0.04707788577775721 | 00_lightning_csv\D_3.csv | 
 ```
