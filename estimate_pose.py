@@ -247,7 +247,7 @@ def main():
 
                 if not (is_debug_output or is_csv):
                     # 画面反映 ##########################################################
-                    cv.imshow('MoveNet(singlepose) Demo', debug_image)
+                    cv.imshow('Pose estimation Demo', debug_image)
 
         finally:
             if is_debug_output:

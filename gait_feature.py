@@ -332,9 +332,10 @@ def main():
     if args.query_path is not None and os.path.isfile(args.query_path):
         query = GaitFeature(csv_filepath=args.query_path, fps=fps)
         similar_results = db.search_similar(query, top_n=10)
-        print("Most similar:")
+        print("| label | similarity | file_path |")
+        print("| - | - | - |")
         for label, similarity, file_path in similar_results:
-            print(f"Label: {label}, Similarity: {similarity}, FilePath :{file_path}")
+            print(f"| {label} | {similarity} | {file_path} |")
 
 
 if __name__ == "__main__":
