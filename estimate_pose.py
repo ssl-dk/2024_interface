@@ -84,10 +84,10 @@ def main():
     is_csv = False
 
     if args.debug_output:
-        os.makedirs('hrnet_debugs', exist_ok=True)
+        os.makedirs('debugs', exist_ok=True)
         is_debug_output = True
     if args.csv:
-        os.makedirs('hrnet_csv', exist_ok=True)
+        os.makedirs('csv', exist_ok=True)
         is_csv = True
 
     cap_devices = [cap_device]
