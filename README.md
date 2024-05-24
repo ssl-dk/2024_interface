@@ -133,14 +133,14 @@ python smooth.py --file csv/ --output smooth/
 python gait_feature.py --csv_path csv --query_path csv/A_1.csv            
 | label | similarity | file_path |
 | - | - | - |                                           
-| A | 0.7450044234012938 | 00_lightning_csv\A_2.csv |   
-| A | 0.4521558599142875 | 00_lightning_csv\A_4.csv |   
-| D | 0.29694326155269396 | 00_lightning_csv\D_5.csv |  
-| A | 0.20545524107553953 | 00_lightning_csv\A_3.csv |  
-| B | 0.19316869080360857 | 00_lightning_csv\B_2.csv |  
-| B | 0.05426617801114495 | 00_lightning_csv\B_4.csv |  
-| D | 0.024470875058635266 | 00_lightning_csv\D_2.csv | 
-| D | 0.008471934158318227 | 00_lightning_csv\D_4.csv | 
-| A | -0.011680579291395527 | 00_lightning_csv\A_5.csv |
-| D | -0.04707788577775721 | 00_lightning_csv\D_3.csv | 
+| A | 0.7450044234012938 | csv\A_2.csv |   
+| A | 0.4521558599142875 | csv\A_4.csv |   
+| D | 0.29694326155269396 | csv\D_5.csv |  
+| A | 0.20545524107553953 | csv\A_3.csv |  
+| B | 0.19316869080360857 | csv\B_2.csv |  
+| B | 0.05426617801114495 | csv\B_4.csv |  
+| D | 0.024470875058635266 | csv\D_2.csv | 
+| D | 0.008471934158318227 | csv\D_4.csv | 
+| A | -0.011680579291395527 | csv\A_5.csv |
+| D | -0.04707788577775721 | csv\D_3.csv | 
 ```
