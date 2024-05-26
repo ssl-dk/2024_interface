@@ -33,6 +33,10 @@ def get_args():
     parser.add_argument("--debug_output",  action='store_true')
     parser.add_argument('--csv', action='store_true')
 
+    parser.add_argument('--csv_path', type=str, default='csv')
+    parser.add_argument('--debug_path', type=str, default='debugs')
+
+
     args = parser.parse_args()
 
     return args
@@ -80,10 +84,10 @@ def main():
     is_csv = False
 
     if args.debug_output:
-        os.makedirs('debugs', exist_ok=True)
+        os.makedirs(args.debug_path, exist_ok=True)
         is_debug_output = True
     if args.csv:
-        os.makedirs('csv', exist_ok=True)
+        os.makedirs(args.csv_path, exist_ok=True)
         is_csv = True
 
     cap_devices = [cap_device]
@@ -118,13 +122,13 @@ def main():
 
         if is_debug_output:
             # 重畳動画出力準備 ######################################################
-            debug_file_path = 'debugs/' + basename + '_debug.mp4'
+            debug_file_path = os.path.join(args.debug_path, basename + '_debug.mp4')
             debug_writer = cv.VideoWriter(debug_file_path,
                                           cv.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
 
         if is_csv:
             # CSVヘッダ出力 #######################################################
-            csv_file_path = 'csv/' + basename + '.csv'
+            csv_file_path = os.path.join(args.csv_path, basename + '.csv')
             csv_writer = open(csv_file_path, 'w', newline='\n', encoding='utf-8')
             csv_writer.write(','.join(KEYPOINTS_LABELS) + '\n')
 
