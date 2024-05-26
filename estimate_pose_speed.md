@@ -1,15 +1,15 @@
 # 参考処理速度
 
-| Platform                               | model                         | sec/frame (avg)      | onnx-provider |
-|----------------------------------------|-------------------------------|----------------------|---------------|
-| ThinkPad T480 (Ubuntu 22.04)           | movenet_singlepose_lighting_4 | 0.06233941911293325  | CPU           |
-| ThinkPad T480 (Ubuntu 22.04)           | movenet_singlepose_thunder_4  | 0.09349038348382589  | CPU           |
-| ThinkPad T480 (use mx150)              | movenet_singlepose_lighting_4 | 0.02970061174557801  | CUDA          |
-| ThinkPad T480 (use mx150)              | movenet_singlepose_thunder_4  | 0.04620538526352554  | CUDA          |
-| Raspberry Pi5 (RPiOS 6.6.20)           | movenet_singlepose_lighting_4 | 0.06858045405841906  | CPU           |
-| Raspberry Pi5 (RPiOS 6.6.20)           | movenet_singlepose_thunder_4  | 0.14750172119748892  | CPU           |
-| Jetson AGX Orin (L4T 36.3/Jetpack 6.0) | movenet_singlepose_lighting_4 | 0.016188874331585095 | CUDA          |
-| Jetson AGX Orin (L4T 36.3/Jetpack 6.0) | movenet_singlepose_thunder_4  | 0.016434536843745202 | CUDA          |
+| Platform                                        | model                         | sec/frame (avg)      | onnx-provider |
+|-------------------------------------------------|-------------------------------|----------------------|---------------|
+| ThinkPad T480 i5-8250U (Ubuntu 22.04)           | movenet_singlepose_lighting_4 | 0.06233941911293325  | CPU           |
+| ThinkPad T480 i5-8250U (Ubuntu 22.04)           | movenet_singlepose_thunder_4  | 0.09349038348382589  | CPU           |
+| ThinkPad T480 Geforce mx150 (Ubuntu 22.04)      | movenet_singlepose_lighting_4 | 0.02970061174557801  | CUDA          |
+| ThinkPad T480 Geforce mx150 (Ubuntu 22.04)      | movenet_singlepose_thunder_4  | 0.04620538526352554  | CUDA          |
+| Raspberry Pi5 (RaspberryPi OS March 15th 2024)  | movenet_singlepose_lighting_4 | 0.06858045405841906  | CPU           |
+| Raspberry Pi5 (RaspberryPi OS March 15th 2024)  | movenet_singlepose_thunder_4  | 0.14750172119748892  | CPU           |
+| Jetson AGX Orin (L4T 36.3/Jetpack 6.0)          | movenet_singlepose_lighting_4 | 0.016188874331585095 | CUDA          |
+| Jetson AGX Orin (L4T 36.3/Jetpack 6.0)          | movenet_singlepose_thunder_4  | 0.016434536843745202 | CUDA          |
 
 
 ## 対象動画
