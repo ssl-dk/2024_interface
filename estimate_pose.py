@@ -158,7 +158,6 @@ def main():
             elapsed = .0
             frame_number = 0
             while True:
-                start_time = time.time()
 
                 # カメラキャプチャ #####################################################
                 ret, frame = cap.read()
@@ -166,6 +165,8 @@ def main():
                     break
                 if mirror:
                     frame = cv.flip(frame, 1)  # ミラー表示
+
+                start_time = time.time()
 
                 # 検出実施 ############################################################
                 keypoints, scores = run_inference(
@@ -217,7 +218,7 @@ def main():
         all_elapsed += elapsed
         print(cap_device, fps, frame_width, frame_height, elapsed/frame_number, frame_number)
 
-    print('avg sec / frame: ', str(float(all_elapsed/all_frame)), str(all_frame))
+    print(' avg inference FPS :', str(1.0/float(all_elapsed/all_frame)), 'all frames:', str(all_frame))
 
 # デバッグ動画色
 LEFT_LINE_COLOR_RED = (0, 0, 255)
