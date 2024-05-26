@@ -108,6 +108,8 @@ def main():
     model_select = args.model_select
     keypoint_score_th = args.keypoint_score
 
+    all_elapsed = .0
+    all_frame = 0
     for cap_device in cap_devices:
         if is_debug_output or is_csv:
             basename = os.path.splitext(os.path.basename(cap_device))[0]
@@ -153,6 +155,7 @@ def main():
         )
 
         try:
+            elapsed = .0
             frame_number = 0
             while True:
                 start_time = time.time()
@@ -172,6 +175,7 @@ def main():
                 )
 
                 elapsed_time = time.time() - start_time
+                elapsed += elapsed_time
 
                 if is_debug_output or not (is_debug_output or is_csv):
                     debug_image = copy.deepcopy(frame)
@@ -209,7 +213,11 @@ def main():
                 csv_writer.close()
             cap.release()
             cv.destroyAllWindows()
+        all_frame += frame_number
+        all_elapsed += elapsed
+        print(cap_device, fps, frame_width, frame_height, elapsed/frame_number, frame_number)
 
+    print('avg sec / frame: ', str(float(all_elapsed/all_frame)), str(all_frame))
 
 # デバッグ動画色
 LEFT_LINE_COLOR_RED = (0, 0, 255)
