@@ -15,8 +15,8 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", type=str, default='csv/')
     parser.add_argument("--output_dir", type=str, default='smooth')
-    parser.add_argument("--keypoint_score", type=float, default=0.3)
-    parser.add_argument("--filter", type=str, default='butter')       # or butter or savgol
+    parser.add_argument("--keypoint_score", type=float, default=0.2)
+    parser.add_argument("--filter", type=str, default=None)       # or butter or savgol
     # savgol
     parser.add_argument("--window_length", type=float, default=5)
     parser.add_argument("--polyorder", type=float, default=2)
@@ -51,10 +51,13 @@ def main():
         joints = set(col.rsplit('_', 1)[0] for col in columns if col != 'frame_number')
         filtered = apply_threshold(original.copy(), joints, args.keypoint_score)
         data_interpolated = linear_interpolation(filtered.copy())
-        data_smoothed = smooth_data(data_interpolated.copy(),
-                                    filter_name=args.filter,
-                                    cutoff=args.cutoff, fs=args.fs, order=args.order,
-                                    window_length=args.window_length, polyorder=args.polyorder)
+        if args.filter is not None:
+            data_smoothed = smooth_data(data_interpolated.copy(),
+                                        filter_name=args.filter,
+                                        cutoff=args.cutoff, fs=args.fs, order=args.order,
+                                        window_length=args.window_length, polyorder=args.polyorder)
+        else:
+            data_smoothed = data_interpolated
         data_smoothed.to_csv(os.path.join(args.output_dir, basename_with_ext), index=False)
 
 
