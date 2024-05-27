@@ -1,15 +1,21 @@
 # 参考処理速度
 
-| Platform                                       | model                         | FPS    | onnx-provider |
-|------------------------------------------------|-------------------------------|--------|---------------|
-| ThinkPad T480 i5-8250U (Ubuntu 22.04)          | movenet_singlepose_lighting_4 | 42.509 | CPU           |
-| ThinkPad T480 i5-8250U (Ubuntu 22.04)          | movenet_singlepose_thunder_4  | 16.596 | CPU           |
-| ThinkPad T480 GeForce MX150 (Ubuntu 22.04)     | movenet_singlepose_lighting_4 | 67.222 | CUDA          |
-| ThinkPad T480 GeForce MX150 (Ubuntu 22.04)     | movenet_singlepose_thunder_4  | 38.682 | CUDA          |
-| Raspberry Pi5 (RaspberryPi OS March 15th 2024) | movenet_singlepose_lighting_4 | 19.866 | CPU           |
-| Raspberry Pi5 (RaspberryPi OS March 15th 2024) | movenet_singlepose_thunder_4  | 7.129  | CPU           |
-| Jetson AGX Orin (L4T 36.3/Jetpack 6.0)         | movenet_singlepose_lighting_4 | 93.443 | CUDA          |
-| Jetson AGX Orin (L4T 36.3/Jetpack 6.0)         | movenet_singlepose_thunder_4  | 92.897 | CUDA          |
+| Platform                                         | model                         | FPS     | provider |
+|--------------------------------------------------|-------------------------------|---------|----------|
+| ThinkPad T480 i5-8250U (Ubuntu 22.04)            | movenet_singlepose_lighting_4 | 42.509  | CPU      |
+| ThinkPad T480 i5-8250U (Ubuntu 22.04)            | movenet_singlepose_thunder_4  | 16.596  | CPU      |
+| ThinkPad T480 GeForce MX150 (Ubuntu 22.04)       | movenet_singlepose_lighting_4 | 67.222  | CUDA     |
+| ThinkPad T480 GeForce MX150 (Ubuntu 22.04)       | movenet_singlepose_thunder_4  | 38.682  | CUDA     |
+| LifeBook U9311 i5-1145G7  (Windows10 22H2)       | movenet_singlepose_lighting_4 | 66.159  | CPU      |
+| LifeBook U9311 i5-1145G7  (Windows10 22H2)       | movenet_singlepose_thunder_4  | 22.490  | CPU      |
+| Raspberry Pi5 (RaspberryPi OS March 15th 2024)   | movenet_singlepose_lighting_4 | 19.866  | CPU      |
+| Raspberry Pi5 (RaspberryPi OS March 15th 2024)   | movenet_singlepose_thunder_4  | 7.129   | CPU      |
+| Jetson AGX Orin (L4T 36.3/Jetpack 6.0)           | movenet_singlepose_lighting_4 | 93.443  | CUDA     |
+| Jetson AGX Orin (L4T 36.3/Jetpack 6.0)           | movenet_singlepose_thunder_4  | 92.897  | CUDA     |
+| IA Server Intel(R) Xeon(R) W-2125 (Ubuntu 22.04) | movenet_singlepose_lighting_4 | 182.382 | CPU      |
+| IA Server Intel(R) Xeon(R) W-2125 (Ubuntu 22.04) | movenet_singlepose_thunder_4  | 73.271  | CPU      |
+| IA Server Quadro RTX 6000 (Ubuntu 22.04)         | movenet_singlepose_lighting_4 | 236.902 | CUDA     |
+| IA Server Quadro RTX 6000 (Ubuntu 22.04)         | movenet_singlepose_thunder_4  | 161.967 | CUDA     |
 
 
 ## 対象動画
