@@ -33,9 +33,9 @@ def get_args():
     parser.add_argument("--debug_output",  action='store_true')
     parser.add_argument('--csv', action='store_true')
 
-    parser.add_argument('--detection', action='store_true')
-    parser.add_argument('--score_th', type=float, default=0.4)
-    parser.add_argument('--nms_th', type=float, default=0.85)
+    parser.add_argument('--csv_path', type=str, default='csv')
+    parser.add_argument('--debug_path', type=str, default='debugs')
+
 
     args = parser.parse_args()
 
@@ -84,10 +84,10 @@ def main():
     is_csv = False
 
     if args.debug_output:
-        os.makedirs('debugs', exist_ok=True)
+        os.makedirs(args.debug_path, exist_ok=True)
         is_debug_output = True
     if args.csv:
-        os.makedirs('csv', exist_ok=True)
+        os.makedirs(args.csv_path, exist_ok=True)
         is_csv = True
 
     cap_devices = [cap_device]
@@ -108,6 +108,8 @@ def main():
     model_select = args.model_select
     keypoint_score_th = args.keypoint_score
 
+    all_elapsed = .0
+    all_frame = 0
     for cap_device in cap_devices:
         if is_debug_output or is_csv:
             basename = os.path.splitext(os.path.basename(cap_device))[0]
@@ -122,57 +124,40 @@ def main():
 
         if is_debug_output:
             # 重畳動画出力準備 ######################################################
-            debug_file_path = 'debugs/' + basename + '_debug.mp4'
+            debug_file_path = os.path.join(args.debug_path, basename + '_debug.mp4')
             debug_writer = cv.VideoWriter(debug_file_path,
                                           cv.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
 
         if is_csv:
             # CSVヘッダ出力 #######################################################
-            csv_file_path = 'csv/' + basename + '.csv'
+            csv_file_path = os.path.join(args.csv_path, basename + '.csv')
             csv_writer = open(csv_file_path, 'w', newline='\n', encoding='utf-8')
             csv_writer.write(','.join(KEYPOINTS_LABELS) + '\n')
 
         # モデルロード #############################################################
-        input_size = -1
         if model_select == 0:
             model_path = "onnx/movenet_singlepose_lightning_4.onnx"
-            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
             input_size = 192
         elif model_select == 1:
             model_path = "onnx/movenet_singlepose_thunder_4.onnx"
-            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
             input_size = 256
-        elif model_select == 2:
-            model_path = "onnx/litehrnet_18_coco_Nx256x192.onnx"
-            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
-        elif model_select == 3:
-            model_path = "onnx/hrnet_coco_w48_384x288.onnx"
-            yolo_path = "onnx/damoyolo_tinynasL20_T_418.onnx"
         else:
             sys.exit(
                 "*** model_select {} is invalid value. Please use 0-1. ***".format(
                     model_select))
 
-        if args.detection:
-            from damoyolo_onnx import DAMOYOLO
-            damo_yolo = DAMOYOLO(model_path=yolo_path)
-
-        if model_select < 2:
-            onnx_session = onnxruntime.InferenceSession(
-                model_path,
-                providers=[
-                    'CUDAExecutionProvider',
-                    'CPUExecutionProvider',
-                ],
-            )
-        else:
-            from HRNET import HRNET
-            hrnet = HRNET(model_path)
+        onnx_session = onnxruntime.InferenceSession(
+            model_path,
+            providers=[
+                ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"}),
+                'CPUExecutionProvider',
+            ],
+        )
 
         try:
+            elapsed = .0
             frame_number = 0
             while True:
-                start_time = time.time()
 
                 # カメラキャプチャ #####################################################
                 ret, frame = cap.read()
@@ -181,44 +166,17 @@ def main():
                 if mirror:
                     frame = cv.flip(frame, 1)  # ミラー表示
 
-                if args.detection:
-                    bboxes, scores, class_ids = damo_yolo(frame, score_th=args.score_th, nms_th=args.nms_th)
-                    # 動画には一人のみ写っているものとし、最大スコアを持つ矩形を処理対象とする
-                    max_index = np.argmax(scores)
+                start_time = time.time()
 
                 # 検出実施 ############################################################
-                if model_select < 2:
-                    if args.detection:
-                        # HRNETと同等の処理を記載（関心矩形切出）
-                        x1, y1, x2, y2 = bboxes[max_index]
-                        box_width, box_height = x2 - x1, y2 - y1
-
-                        x1 = max(int(x1 - box_width * 0.1), 0)
-                        x2 = min(int(x2 + box_width * 0.1), frame_width)
-                        y1 = max(int(y1 - box_height * 0.1), 0)
-                        y2 = min(int(y2 + box_height * 0.1), frame_height)
-
-                        crop = frame[y1:y2, x1:x2]
-                    else:
-                        crop = frame
-                    keypoints, scores = run_inference(
-                        onnx_session,
-                        input_size,
-                        crop,
-                    )
-                    if args.detection:
-                        # Fix the body pose to the original image
-                        keypoints = [[x + x1, y + y1] for [x, y] in keypoints]
-                else:
-                    # HRNETはモデルに矩形入力に応じる引数がある
-                    deteciton = None
-                    if args.detection:
-                        deteciton = [[bboxes[max_index]], [scores[max_index]], [class_ids[max_index]]]
-                    _, keypoints, scores = hrnet(frame, deteciton)
-                    if args.detection:
-                        keypoints = keypoints[0]
+                keypoints, scores = run_inference(
+                    onnx_session,
+                    input_size,
+                    frame,
+                )
 
                 elapsed_time = time.time() - start_time
+                elapsed += elapsed_time
 
                 if is_debug_output or not (is_debug_output or is_csv):
                     debug_image = copy.deepcopy(frame)
@@ -256,7 +214,11 @@ def main():
                 csv_writer.close()
             cap.release()
             cv.destroyAllWindows()
+        all_frame += frame_number
+        all_elapsed += elapsed
+        print(cap_device, fps, frame_width, frame_height, elapsed/frame_number, frame_number)
 
+    print(' avg inference FPS :', str(1.0/float(all_elapsed/all_frame)), 'all frames:', str(all_frame))
 
 # デバッグ動画色
 LEFT_LINE_COLOR_RED = (0, 0, 255)
