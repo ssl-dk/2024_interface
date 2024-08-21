@@ -1,6 +1,4 @@
-# 2024年 5月 雑誌 [interface](https://interface.cqpub.co.jp/) 向けコード 現場プロの画像処理100（仮）
-
-書いた人: 青木俊彦
+# 2024年 10月号向けコード [interface](https://interface.cqpub.co.jp/) 
 
 ## 要件
 
