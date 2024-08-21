@@ -1,4 +1,4 @@
-# 2024年 10月号向けコード [interface](https://interface.cqpub.co.jp/) 
+# [interface](https://interface.cqpub.co.jp/) 2024年 10月号向けコード
 
 ## 要件
 
